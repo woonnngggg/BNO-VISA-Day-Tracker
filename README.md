@@ -9,6 +9,14 @@ Works offline · your data stays in your own browser · no account needed
 
 ---
 
+## 資料與私隱 · Data & Privacy
+
+資料只存在**你自己的瀏覽器**（localStorage）。線上版的主機（如 GitHub）只負責送出網頁，**永遠看不到你的行程資料**。不同瀏覽器／裝置不會自動同步，跨裝置請用「匯出／匯入」。
+
+Your data is stored **only in your own browser** (localStorage). The host (e.g. GitHub)merely serves the page and **never sees your travel data**. Different browsers/devices don't sync automatically — use export/import to move data between them.
+
+---
+
 ## 目錄 · Contents
 
 - [如何使用 · How to Use](#如何使用--how-to-use)
@@ -165,14 +173,6 @@ A live hint shows the current gap and how it is treated; if "grant date" is chos
 對每一程，程式掃描**所有包含該程離英日**的連續 12 個月窗口（窗口尾端由該程首日掃到末日 + 12 個月），取離英日數的**最大值**。因此若兩程落在同一個 12 個月窗口內，該欄會顯示兩程**合併後**的總數，反映該程真正的最壞曝險。
 
 For each trip, the tool scans **every rolling 12-month window that contains any of the trip's absence days** (window end swept from the trip's first day to its last day + 12 months) and takes the **maximum**. So if two trips fall in the same 12-month window, this column shows their **combined** total — the trip's true worst exposure.
-
----
-
-## 資料與私隱 · Data & Privacy
-
-資料只存在**你自己的瀏覽器**（localStorage）。線上版的主機（如 GitHub）只負責送出網頁，**永遠看不到你的行程資料**。不同瀏覽器／裝置不會自動同步，跨裝置請用「匯出／匯入」。
-
-Your data is stored **only in your own browser** (localStorage). The host (e.g. GitHub)merely serves the page and **never sees your travel data**. Different browsers/devices don't sync automatically — use export/import to move data between them.
 
 ---
 
