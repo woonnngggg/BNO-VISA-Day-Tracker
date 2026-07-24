@@ -1162,6 +1162,92 @@
     });
   }
 
+  // ---------- 說明（讀取並顯示 README.md）----------
+  var helpLoaded = false;
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function inlineMd(s) {
+    s = s.replace(/&lt;br\s*\/?&gt;/g, "<br>");                                  // 保留刻意的換行
+    s = s.replace(/&lt;(https?:\/\/[^\s&]+)&gt;/g, '<a href="$1" target="_blank" rel="noopener">$1</a>'); // <url> 自動連結
+    s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    return s;
+  }
+  function tableCells(row) {
+    return row.replace(/^\||\|$/g, "").split("|").map(function (c) { return c.trim(); });
+  }
+  function renderMarkdown(md) {
+    var lines = escapeHtml(md).split(/\r?\n/);
+    var out = [], i = 0;
+    while (i < lines.length) {
+      var line = lines[i];
+      if (/^```/.test(line)) {                                   // 程式碼區塊
+        var buf = []; i++;
+        while (i < lines.length && !/^```/.test(lines[i])) { buf.push(lines[i]); i++; }
+        i++;
+        out.push("<pre><code>" + buf.join("\n") + "</code></pre>");
+        continue;
+      }
+      if (/^---+\s*$/.test(line)) { out.push("<hr>"); i++; continue; }
+      var h = line.match(/^(#{1,6})\s+(.*)$/);
+      if (h) { var lv = h[1].length; out.push("<h" + lv + ">" + inlineMd(h[2]) + "</h" + lv + ">"); i++; continue; }
+      if (/^>\s?/.test(line)) {                                  // 引言
+        var bq = [];
+        while (i < lines.length && /^>\s?/.test(lines[i])) { bq.push(inlineMd(lines[i].replace(/^>\s?/, ""))); i++; }
+        out.push("<blockquote>" + bq.join("<br>") + "</blockquote>"); continue;
+      }
+      if (/^\|.*\|/.test(line) && i + 1 < lines.length && /^\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1])) { // 表格
+        var header = line; i += 2;
+        var t = "<table><thead><tr>";
+        tableCells(header).forEach(function (c) { t += "<th>" + inlineMd(c) + "</th>"; });
+        t += "</tr></thead><tbody>";
+        while (i < lines.length && /^\|.*\|/.test(lines[i])) {
+          t += "<tr>";
+          tableCells(lines[i]).forEach(function (c) { t += "<td>" + inlineMd(c) + "</td>"; });
+          t += "</tr>"; i++;
+        }
+        out.push(t + "</tbody></table>"); continue;
+      }
+      if (/^\s*-\s+/.test(line)) {                               // 清單
+        var items = [];
+        while (i < lines.length && /^\s*-\s+/.test(lines[i])) { items.push("<li>" + inlineMd(lines[i].replace(/^\s*-\s+/, "")) + "</li>"); i++; }
+        out.push("<ul>" + items.join("") + "</ul>"); continue;
+      }
+      if (/^\s*$/.test(line)) { i++; continue; }
+      var para = [];                                             // 段落
+      while (i < lines.length && !/^\s*$/.test(lines[i]) &&
+             !/^(#{1,6}\s|>|```|---+\s*$|\|)/.test(lines[i]) && !/^\s*-\s+/.test(lines[i])) {
+        para.push(inlineMd(lines[i])); i++;
+      }
+      out.push("<p>" + para.join("<br>") + "</p>");
+    }
+    return out.join("\n");
+  }
+
+  function openHelp() {
+    document.getElementById("helpOverlay").classList.add("open");
+    if (helpLoaded) return;
+    var body = document.getElementById("helpBody");
+    fetch("README.md", { cache: "no-store" }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.text();
+    }).then(function (md) {
+      body.innerHTML = renderMarkdown(md);
+      body.scrollTop = 0;
+      helpLoaded = true;
+    }).catch(function () {
+      body.innerHTML = "<p>無法載入 README.md。若你以「檔案」方式（file://）直接開啟本頁，" +
+        "瀏覽器會阻止讀取；請改用<strong>線上版</strong>或<strong>桌面程式</strong>，" +
+        "或直接開啟專案中的 <code>README.md</code>。</p>" +
+        "<p>Could not load README.md — if you opened this file directly (file://), the browser blocks it. " +
+        "Use the online or desktop version instead.</p>";
+    });
+  }
+  function closeHelp() { document.getElementById("helpOverlay").classList.remove("open"); }
+
   // ---------- wiring ----------
   function syncInputs() {
     document.getElementById("grantDate").value = state.grantDate || "";
@@ -1176,6 +1262,15 @@
     load();
     syncInputs();
     initTheme();
+
+    document.getElementById("helpBtn").addEventListener("click", openHelp);
+    document.getElementById("helpClose").addEventListener("click", closeHelp);
+    document.getElementById("helpOverlay").addEventListener("click", function (e) {
+      if (e.target === this) closeHelp();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeHelp();
+    });
 
     document.getElementById("saveTrip").addEventListener("click", saveTrip);
     document.getElementById("cancelEdit").addEventListener("click", function () {
