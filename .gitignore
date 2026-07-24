@@ -1,0 +1,4 @@
+*.exe
+dist/
+/BNO-VISA-Day-Tracker
+BNO-VISA-Day-Tracker-*

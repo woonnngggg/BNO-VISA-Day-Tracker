@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BNO 簽證留英日數計算機</title>
+<style>
+  :root {
+    --bg: #eef1f8;
+    --surface: #ffffff;
+    --surface-2: #f6f8fc;
+    --ink: #16203a;
+    --muted: #5b6784;
+    --faint: #8b96ad;
+    --border: #dbe1ee;
+    --accent: #1f3a6d;
+    --accent-soft: #e5ebf7;
+    --heritage: #7b2233;
+    --good: #1f8a54;
+    --good-soft: #e2f2e9;
+    --warn: #a9691a;
+    --warn-soft: #f6ecda;
+    --bad: #c02d3c;
+    --bad-soft: #f8e3e5;
+    --shadow: 0 1px 2px rgba(22,32,58,.06), 0 8px 24px rgba(22,32,58,.06);
+    --font-sans: system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Noto Sans CJK TC", "Hiragino Sans", sans-serif;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1424;
+      --surface: #16203a;
+      --surface-2: #1b2745;
+      --ink: #eef2fb;
+      --muted: #98a4c1;
+      --faint: #6d7998;
+      --border: #29344f;
+      --accent: #7ba0e6;
+      --accent-soft: #1e2c4c;
+      --heritage: #d68a9a;
+      --good: #4ec585;
+      --good-soft: #163728;
+      --warn: #e0a54a;
+      --warn-soft: #3a2f16;
+      --bad: #f0616f;
+      --bad-soft: #3a1c22;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f8; --surface: #ffffff; --surface-2: #f6f8fc; --ink: #16203a;
+    --muted: #5b6784; --faint: #8b96ad; --border: #dbe1ee; --accent: #1f3a6d;
+    --accent-soft: #e5ebf7; --heritage: #7b2233; --good: #1f8a54; --good-soft: #e2f2e9;
+    --warn: #a9691a; --warn-soft: #f6ecda; --bad: #c02d3c; --bad-soft: #f8e3e5;
+    --shadow: 0 1px 2px rgba(22,32,58,.06), 0 8px 24px rgba(22,32,58,.06);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1424; --surface: #16203a; --surface-2: #1b2745; --ink: #eef2fb;
+    --muted: #98a4c1; --faint: #6d7998; --border: #29344f; --accent: #7ba0e6;
+    --accent-soft: #1e2c4c; --heritage: #d68a9a; --good: #4ec585; --good-soft: #163728;
+    --warn: #e0a54a; --warn-soft: #3a2f16; --bad: #f0616f; --bad-soft: #3a1c22;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .page {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 16px 64px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* Header */
+  header.masthead {
+    padding: 40px 0 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .brandline {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600;
+  }
+  .mark {
+    width: 30px; height: 40px; border-radius: 4px; flex: none;
+    background: linear-gradient(160deg, var(--accent) 0%, var(--heritage) 140%);
+    position: relative; box-shadow: var(--shadow);
+  }
+  .mark::before {
+    content: ""; position: absolute; inset: 5px; border: 1.5px solid rgba(255,255,255,.55);
+    border-radius: 2px;
+  }
+  .mark::after {
+    content: "✶"; position: absolute; inset: 0; display: grid; place-items: center;
+    color: rgba(255,255,255,.85); font-size: 13px;
+  }
+  h1 { font-size: clamp(26px, 5vw, 38px); line-height: 1.12; margin: 16px 0 8px; text-wrap: balance; letter-spacing: -.01em; }
+  .lede { color: var(--muted); font-size: 15px; max-width: 60ch; margin: 0; }
+
+  /* Cards / sections */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+    margin-bottom: 22px;
+  }
+  .card > h2 {
+    font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 16px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card > h2::before {
+    content: ""; width: 14px; height: 2px; background: var(--heritage); border-radius: 2px;
+  }
+
+  /* Summary stat grid */
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 22px; }
+  @media (min-width: 620px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 16px 18px; box-shadow: var(--shadow); position: relative; overflow: hidden;
+  }
+  .stat .label { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+  .stat .value { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+  .stat .value small { font-size: 14px; font-weight: 600; color: var(--faint); margin-left: 3px; }
+  .stat .sub { font-size: 12px; color: var(--faint); margin-top: 7px; }
+  .stat.accent { grid-column: span 2; }
+  @media (min-width: 620px) { .stat.accent { grid-column: span 2; } }
+
+  /* Pills */
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+    letter-spacing: .01em;
+  }
+  .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .pill.good { color: var(--good); background: var(--good-soft); }
+  .pill.warn { color: var(--warn); background: var(--warn-soft); }
+  .pill.bad  { color: var(--bad);  background: var(--bad-soft); }
+  .pill.neutral { color: var(--muted); background: var(--surface-2); }
+
+  /* Progress bar */
+  .meter { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 14px; border: 1px solid var(--border); }
+  .meter > span { display: block; height: 100%; border-radius: 999px; transition: width .35s ease; }
+  .meter.good > span { background: var(--good); }
+  .meter.warn > span { background: var(--warn); }
+  .meter.bad  > span { background: var(--bad); }
+  .meter-legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--faint); margin-top: 7px; }
+
+  .worst-detail { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; margin-top: 4px; }
+  .worst-detail .big { font-size: 34px; font-weight: 700; letter-spacing: -.02em; }
+  .worst-detail .lim { font-size: 15px; color: var(--muted); font-weight: 600; }
+  .worst-window { font-size: 13px; color: var(--muted); margin-top: 10px; }
+
+  .ilr-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 11px 0; border-top: 1px solid var(--border); }
+  .ilr-row:first-of-type { border-top: none; padding-top: 0; }
+  .ilr-label { font-size: 13px; color: var(--muted); font-weight: 600; flex: 0 0 132px; }
+  .ilr-date { font-size: 20px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ilr-note { font-size: 12.5px; color: var(--faint); }
+  .records-summary { font-size: 13.5px; color: var(--muted); margin: 2px 0 14px; }
+  .records-summary strong { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .worst-window strong { color: var(--ink); font-weight: 600; }
+
+  /* Forms */
+  .field-row { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 560px) { .field-row.two { grid-template-columns: 1fr 1fr; } }
+  label.f { display: block; }
+  label.f .cap { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block; }
+  input[type="date"], input[type="text"], input[type="number"] {
+    width: 100%; font-family: inherit; font-size: 15px; color: var(--ink);
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  input::-webkit-calendar-picker-indicator { opacity: .6; cursor: pointer; }
+
+  .seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 3px; }
+  .seg label { flex: 1; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg span {
+    display: block; text-align: center; font-size: 13px; font-weight: 600; color: var(--muted);
+    padding: 8px 14px; border-radius: 8px; cursor: pointer; user-select: none; transition: .15s;
+    white-space: nowrap;
+  }
+  .seg input:checked + span { background: var(--surface); color: var(--accent); box-shadow: var(--shadow); }
+  .seg input:focus-visible + span { box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  .method-note { font-size: 12.5px; color: var(--faint); margin-top: 10px; line-height: 1.5; }
+
+  /* Buttons */
+  button { font-family: inherit; cursor: pointer; border-radius: 10px; font-weight: 600; transition: .15s; }
+  .btn-primary {
+    background: var(--accent); color: #fff; border: 1px solid var(--accent);
+    padding: 11px 20px; font-size: 15px;
+  }
+  :root[data-theme="dark"] .btn-primary, @media (prefers-color-scheme: dark) { }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 11px 18px; font-size: 14px; }
+  .btn-ghost:hover { color: var(--ink); border-color: var(--faint); }
+  button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .form-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; align-items: center; }
+  .form-err { color: var(--bad); font-size: 13px; font-weight: 600; }
+
+  /* Trip list */
+  .trip-scroll { overflow-x: auto; margin: 0 -22px; padding: 0 22px; }
+  table.trips { width: 100%; border-collapse: collapse; min-width: 520px; }
+  table.trips th {
+    text-align: left; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--faint); font-weight: 700; padding: 0 12px 10px; white-space: nowrap;
+  }
+  table.trips th.rt, table.trips td.rt { text-align: right; }
+  table.trips td { padding: 12px; border-top: 1px solid var(--border); font-size: 14.5px; vertical-align: middle; }
+  table.trips tr:hover td { background: var(--surface-2); }
+  .trip-note { color: var(--muted); font-size: 13px; }
+  .days-cell { font-weight: 700; }
+  .row-actions { display: inline-flex; gap: 4px; }
+  .icon-btn {
+    background: transparent; border: 1px solid transparent; color: var(--faint);
+    width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; font-size: 15px;
+  }
+  .icon-btn:hover { background: var(--surface-2); color: var(--ink); border-color: var(--border); }
+  .icon-btn.del:hover { color: var(--bad); }
+  tr.editing td { background: var(--accent-soft) !important; }
+
+  .empty { text-align: center; color: var(--faint); padding: 30px 10px; font-size: 14px; }
+
+  /* Data actions */
+  .data-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .data-actions .btn-ghost.danger:hover { color: var(--bad); border-color: var(--bad); }
+
+  /* Disclaimer */
+  .disclaimer { font-size: 12.5px; color: var(--faint); line-height: 1.65; }
+  .disclaimer strong { color: var(--muted); }
+  footer.foot { text-align: center; font-size: 12px; color: var(--faint); padding-top: 8px; }
+
+  .theme-toggle {
+    position: fixed; top: 14px; right: 14px; z-index: 10;
+    width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted); font-size: 16px; box-shadow: var(--shadow);
+    display: grid; place-items: center;
+  }
+  .theme-toggle:hover { color: var(--ink); }
+
+  /* Analysis section */
+  .cap2 { font-size: 12px; font-weight: 600; color: var(--faint); margin-bottom: 6px; display: block; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .sub-hint { font-size: 12.5px; color: var(--faint); margin: 8px 0 0; line-height: 1.55; }
+  .breach-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .breach-item {
+    display: flex; justify-content: space-between; gap: 12px; align-items: center;
+    padding: 11px 14px; border-radius: 10px; font-size: 14px;
+    border: 1px solid var(--border); border-left-width: 3px; background: var(--surface-2);
+  }
+  .breach-item.bad { border-left-color: var(--bad); }
+  .breach-item.warn { border-left-color: var(--warn); }
+  .breach-item .rng { font-weight: 600; }
+  .breach-item .pk { font-weight: 700; white-space: nowrap; }
+  .breach-item.bad .pk { color: var(--bad); }
+  .breach-item.warn .pk { color: var(--warn); }
+  .breach-empty { color: var(--faint); font-size: 13.5px; margin-top: 14px; }
+  .q-summary {
+    margin-top: 14px; padding: 12px 14px; background: var(--accent-soft);
+    border-radius: 10px; font-size: 14.5px; line-height: 1.6;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  }
+  .qtable-wrap {
+    margin-top: 12px; border: 1px solid var(--border); border-radius: 10px;
+    overflow: auto; max-height: 340px;
+  }
+  table.qtable { width: 100%; border-collapse: collapse; min-width: 340px; }
+  table.qtable th {
+    position: sticky; top: 0; background: var(--surface); z-index: 1;
+    text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--faint); font-weight: 700; padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  table.qtable th.rt, table.qtable td.rt { text-align: right; }
+  table.qtable td { padding: 9px 14px; border-top: 1px solid var(--border); font-size: 14px; }
+  table.qtable tr:first-child td { border-top: none; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <button class="theme-toggle" id="themeToggle" aria-label="切換深淺色主題" title="切換深淺色主題">◐</button>
+  <div class="wrap">
+
+    <header class="masthead">
+      <div class="brandline"><span class="mark" aria-hidden="true"></span> BNO VISA Day Tracker</div>
+      <h1>BNO 簽證留英日數計算機</h1>
+      <p class="lede">追蹤你每次離開英國的日數，自動檢查是否符合永居（ILR）的「任何 12 個月內離境不超過 180 天」規則，並估算你的 5 年連續居留資格日期。所有資料只儲存在你的裝置上。</p>
+    </header>
+
+    <!-- Summary -->
+    <section class="stats" id="stats" aria-label="摘要">
+      <div class="stat">
+        <div class="label">總離境日數</div>
+        <div class="value num" id="stTotal">0</div>
+        <div class="sub" id="stTotalSub">尚未加入行程</div>
+      </div>
+      <div class="stat">
+        <div class="label">目前 12 個月已用</div>
+        <div class="value num" id="stCurrent">0<small>/180</small></div>
+        <div class="sub" id="stCurrentSub">剩餘 180 天</div>
+      </div>
+      <div class="stat">
+        <div class="label">最壞 12 個月窗口</div>
+        <div class="value num" id="stWorst">0</div>
+        <div class="sub" id="stWorstSub">—</div>
+      </div>
+      <div class="stat">
+        <div class="label">永居資格日期</div>
+        <div class="value num" id="stElig" style="font-size:22px">—</div>
+        <div class="sub" id="stEligSub">請先填獲批日期</div>
+      </div>
+    </section>
+
+    <!-- Worst window detail -->
+    <section class="card" aria-label="離境限額狀態">
+      <h2>離境限額狀態 <span id="statusPill" class="pill neutral" style="margin-left:auto">尚無資料</span></h2>
+      <div class="worst-detail">
+        <span class="big num" id="worstBig">0</span>
+        <span class="lim">/ 180 天　（最壞的任何 12 個月期間）</span>
+      </div>
+      <div class="meter good" id="meter"><span id="meterFill" style="width:0%"></span></div>
+      <div class="meter-legend"><span>0</span><span>180 天上限</span></div>
+      <div class="worst-window" id="worstWindow">加入行程後，這裡會顯示離境日數最多的 12 個月期間。</div>
+    </section>
+
+    <!-- ILR timeline -->
+    <section class="card" aria-label="永居申請時程">
+      <h2>永居申請時程</h2>
+      <div class="ilr-row">
+        <span class="ilr-label">住滿 5 年（資格日）</span>
+        <span class="ilr-date num" id="ilrEligDate">—</span>
+        <span class="ilr-note" id="ilrEligNote">請先填「BNO 簽證獲批日期」</span>
+      </div>
+      <div class="ilr-row">
+        <span class="ilr-label">最早可提交申請</span>
+        <span class="ilr-date num" id="ilrApplyDate">—</span>
+        <span class="ilr-note">住滿 5 年前 28 天內</span>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="card">
+      <h2>設定</h2>
+      <div class="field-row two">
+        <label class="f">
+          <span class="cap">BNO 簽證獲批日期</span>
+          <input type="date" id="grantDate" />
+        </label>
+        <label class="f">
+          <span class="cap">首次入境英國日期</span>
+          <input type="date" id="entryDate" />
+        </label>
+      </div>
+      <div class="f" style="margin-top:16px">
+        <span class="cap">永居 5 年起算日</span>
+        <div class="seg" role="radiogroup" aria-label="5 年起算日">
+          <label><input type="radio" name="startBasis" value="grant" checked /><span>簽證獲批日</span></label>
+          <label><input type="radio" name="startBasis" value="entry" /><span>首次入境日</span></label>
+        </div>
+      </div>
+      <p class="sub-hint" id="gapHint" style="margin-top:10px"></p>
+      <div class="f" style="margin-top:18px">
+        <span class="cap">離境日數計算方式</span>
+        <div class="seg" role="radiogroup" aria-label="計算方式">
+          <label><input type="radio" name="method" value="default" checked /><span>標準（旅行當日算在英國）</span></label>
+          <label><input type="radio" name="method" value="strict" /><span>保守（旅行當日算離境）</span></label>
+        </div>
+      </div>
+      <p class="method-note" id="methodNote"></p>
+    </section>
+
+    <!-- Add trip -->
+    <section class="card">
+      <h2 id="formTitle">加入離英行程</h2>
+      <div class="field-row two">
+        <label class="f"><span class="cap">離境日期（離開英國）</span><input type="date" id="fDepart" /></label>
+        <label class="f"><span class="cap">返英日期（回到英國）</span><input type="date" id="fReturn" /></label>
+      </div>
+      <div class="field-row" style="margin-top:14px">
+        <label class="f"><span class="cap">備註（目的地，可選）</span><input type="text" id="fNote" placeholder="例如：香港探親" maxlength="60" /></label>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" id="saveTrip">新增行程</button>
+        <button class="btn-ghost" id="cancelEdit" style="display:none">取消</button>
+        <span class="form-err" id="formErr"></span>
+      </div>
+    </section>
+
+    <!-- Trip list -->
+    <section class="card">
+      <h2>行程紀錄 <span class="pill neutral" id="tripCount" style="margin-left:auto">0 程</span></h2>
+      <p class="records-summary">在任何連續 12 個月內，你最多離英 <strong id="recMax">0</strong> 日（上限 180 日）</p>
+      <p class="sub-hint" style="margin-top:-8px;margin-bottom:14px">下表「任何12個月最多離英」欄：在<strong>包含該程</strong>的任何連續 12 個月期間中，離英最多的日數（向前、向後各看 12 個月取最大值；上限 180 日）。</p>
+      <div class="trip-scroll">
+        <table class="trips">
+          <thead>
+            <tr>
+              <th>離境</th><th>返英</th><th>備註</th><th class="rt">離境日數</th><th class="rt">任何12個月最多離英</th><th class="rt"> </th>
+            </tr>
+          </thead>
+          <tbody id="tripBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyState">尚未加入任何行程。上方填入離境與返英日期即可開始。</div>
+    </section>
+
+    <!-- Analysis -->
+    <section class="card">
+      <h2>進階分析</h2>
+
+      <div class="f">
+        <span class="cap">列出「過去 12 個月離境達到指定日數」的日子</span>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <input type="number" id="threshold" min="1" max="366" value="180" style="width:120px" />
+          <span class="method-note" style="margin:0">天（含）以上</span>
+        </div>
+      </div>
+      <p class="sub-hint">若你在下列任何一天提出申請或被查核，過去 12 個月的離境日數便會達到／超過此門檻。（法定上限為 180 天，可調低作安全預警。）</p>
+      <div class="breach-list" id="breachList"></div>
+
+      <hr class="divider" />
+
+      <div class="f">
+        <span class="cap">逐日查詢：某日 / 某段期間，每天「過去 12 個月離境日數」</span>
+        <div class="field-row two">
+          <label class="f"><span class="cap2">開始日期</span><input type="date" id="qFrom" /></label>
+          <label class="f"><span class="cap2">結束日期（留空 = 只查單日）</span><input type="date" id="qTo" /></label>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-ghost" id="runQuery">查詢</button>
+        <span class="form-err" id="queryErr"></span>
+      </div>
+      <div id="queryResult"></div>
+    </section>
+
+    <!-- Data -->
+    <section class="card">
+      <h2>資料</h2>
+      <div class="data-actions">
+        <button class="btn-ghost" id="exportBtn">匯出 JSON</button>
+        <button class="btn-ghost" id="importBtn">匯入 JSON</button>
+        <button class="btn-ghost danger" id="clearBtn">清除全部</button>
+        <input type="file" id="importFile" accept="application/json,.json" style="display:none" />
+      </div>
+      <p class="method-note">資料自動儲存在此瀏覽器（localStorage）。更換裝置或清除瀏覽器資料前，請先匯出備份。</p>
+    </section>
+
+    <!-- Disclaimer -->
+    <section class="card">
+      <h2>重要說明</h2>
+      <p class="disclaimer">
+        <strong>本工具僅供參考，並非法律或移民意見。</strong>
+        永居（ILR）的離境計算方式，英國內政部指引會不時更新，且個案審批可能因情況而異（例如因 COVID、嚴重疾病、受僱等原因的離境豁免）。「旅行當日」是否計入離境亦存在不同詮釋，故提供「標準」與「保守」兩種計法。
+        BNO 5 年路線一般不可提早申請永居，須完成 5 年連續居留。
+        實際資格請以官方指引及你的個案為準，並於需要時諮詢合資格的移民顧問。可參考 GOV.UK「BN(O) visa」及「Indefinite leave to remain」官方頁面。
+      </p>
+    </section>
+
+    <footer class="foot">留英日數計算機 · 資料僅存於本機</footer>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var STORE_KEY = "bno-calc-v1";
+  var LIMIT = 180;
+  var MS = 86400000;
+
+  var SCHEMA_VERSION = 1;
+  var TOMBSTONE_TTL_DAYS = 90;
+  // In-memory state kept flat for UI convenience; persisted/exported as the
+  // canonical sync-ready document (schemaVersion + updatedAt + settings + trips).
+  // Each trip: { id, depart, return, note, updatedAt, deleted }
+  var state = { grantDate: "", entryDate: "", method: "default", startBasis: "grant", settingsUpdatedAt: "", trips: [] };
+  var editingId = null;
+  var queryActive = false;
+
+  function nowIso() { return new Date().toISOString(); }
+  function maxIso() {
+    var m = "";
+    for (var i = 0; i < arguments.length; i++) { var v = arguments[i]; if (v && v > m) m = v; }
+    return m;
+  }
+  function activeTrips() {
+    return state.trips.filter(function (t) { return !t.deleted; });
+  }
+
+  // ---------- date helpers (UTC-based to avoid DST drift) ----------
+  function parse(str) { // "YYYY-MM-DD" -> {y,m,d} or null
+    if (!str) return null;
+    var p = str.split("-");
+    if (p.length !== 3) return null;
+    var y = +p[0], m = +p[1], d = +p[2];
+    if (!y || !m || !d) return null;
+    return { y: y, m: m, d: d };
+  }
+  function dayNum(str) { // whole-day integer
+    var p = parse(str);
+    if (!p) return null;
+    return Math.floor(Date.UTC(p.y, p.m - 1, p.d) / MS);
+  }
+  function dayToParts(n) {
+    var dt = new Date(n * MS);
+    return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+  }
+  function fmt(n) { // dayNum -> "YYYY年M月D日"
+    if (n == null) return "—";
+    var p = dayToParts(n);
+    return p.y + "年" + p.m + "月" + p.d + "日";
+  }
+  function fmtShort(str) { // "YYYY-MM-DD" -> "YYYY/MM/DD"
+    var p = parse(str);
+    if (!p) return str;
+    return p.y + "/" + String(p.m).padStart(2, "0") + "/" + String(p.d).padStart(2, "0");
+  }
+  function todayNum() {
+    var t = new Date();
+    return Math.floor(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate()) / MS);
+  }
+  // window start day for a 12-month period ending (inclusive) at day E
+  function windowStart(E) {
+    var p = dayToParts(E);
+    // one year earlier, same date, then +1 day
+    var startExclusive = Math.floor(Date.UTC(p.y - 1, p.m - 1, p.d) / MS);
+    return startExclusive + 1;
+  }
+
+  // ---------- absence computation ----------
+  // returns inclusive [start,end] dayNums of absence for a trip, or null if none
+  function absenceRange(trip) {
+    var dep = dayNum(trip.depart), ret = dayNum(trip.return);
+    if (dep == null || ret == null || ret < dep) return null;
+    if (state.method === "strict") return { s: dep, e: ret };
+    var s = dep + 1, e = ret - 1;
+    if (e < s) return null;
+    return { s: s, e: e };
+  }
+  function tripDays(trip) {
+    var r = absenceRange(trip);
+    return r ? (r.e - r.s + 1) : 0;
+  }
+
+  // Build a Set of all absent day numbers (dedup across overlapping trips)
+  function absentDaySet() {
+    var set = new Set();
+    var init = initialAbsenceRange();
+    if (init) for (var j = init.s; j <= init.e; j++) set.add(j);
+    var trips = activeTrips();
+    for (var i = 0; i < trips.length; i++) {
+      var r = absenceRange(trips[i]);
+      if (!r) continue;
+      for (var d = r.s; d <= r.e; d++) set.add(d);
+    }
+    return set;
+  }
+
+  // absent days count within inclusive [a,b]
+  function countIn(sortedDays, a, b) {
+    var c = 0;
+    for (var i = 0; i < sortedDays.length; i++) {
+      var d = sortedDays[i];
+      if (d > b) break;
+      if (d >= a) c++;
+    }
+    return c;
+  }
+
+  function sortedAbsentDays() {
+    return Array.from(absentDaySet()).sort(function (x, y) { return x - y; });
+  }
+
+  // rolling absence count for the 12-month period ending (inclusive) at day E
+  function rollingAt(days, E) { return countIn(days, windowStart(E), E); }
+
+  // sweep E from Estart..Eend calling cb(E, count); O(range + n) via two pointers
+  function sweep(days, Estart, Eend, cb) {
+    var lo = 0, hi = 0;
+    for (var E = Estart; E <= Eend; E++) {
+      var S = windowStart(E);
+      while (hi < days.length && days[hi] <= E) hi++;
+      while (lo < hi && days[lo] < S) lo++;
+      cb(E, hi - lo);
+    }
+  }
+
+  // 包含 [a,b]（某程的離英日）的任何 12 個月窗口中，離英日數的最大值。
+  // 窗口尾端 E 由 a 掃到 b+366；只要窗口起點 windowStart(E) ≤ b，該窗口就含此程。
+  function tripMaxRolling(days, a, b) {
+    var max = 0;
+    sweep(days, a, b + 366, function (E, c) {
+      if (windowStart(E) <= b && c > max) max = c;
+    });
+    return max;
+  }
+
+  function analyze() {
+    var days = sortedAbsentDays();
+    var total = days.length;
+
+    // worst rolling 12-month window: max window ends on an absent day
+    var worst = 0, worstEnd = null, worstStart = null;
+    for (var i = 0; i < days.length; i++) {
+      var E = days[i];
+      var S = windowStart(E);
+      var c = countIn(days, S, E);
+      if (c > worst) { worst = c; worstEnd = E; worstStart = S; }
+    }
+
+    // current window ending today
+    var tN = todayNum();
+    var curUsed = countIn(days, windowStart(tN), tN);
+
+    return {
+      total: total,
+      worst: worst, worstStart: worstStart, worstEnd: worstEnd,
+      curUsed: curUsed
+    };
+  }
+
+  function statusOf(days) {
+    if (days > LIMIT) return "bad";
+    if (days >= 150) return "warn";
+    return "good";
+  }
+
+  // ---------- rendering ----------
+  function render() {
+    var a = analyze();
+
+    // stat: total
+    document.getElementById("stTotal").textContent = a.total;
+    var nActive = activeTrips().length;
+    document.getElementById("stTotalSub").textContent =
+      nActive ? nActive + " 程行程合計" : "尚未加入行程";
+
+    // stat: current window
+    var curRemain = LIMIT - a.curUsed;
+    document.getElementById("stCurrent").innerHTML = a.curUsed + "<small>/180</small>";
+    document.getElementById("stCurrentSub").textContent =
+      (curRemain >= 0 ? "剩餘 " + curRemain + " 天" : "已超出 " + (-curRemain) + " 天");
+
+    // stat: worst
+    document.getElementById("stWorst").textContent = a.worst;
+    document.getElementById("stWorstSub").textContent =
+      a.worstEnd != null ? "截至 " + fmt(a.worstEnd) : "—";
+
+    // worst window card
+    document.getElementById("worstBig").textContent = a.worst;
+    var st = statusOf(a.worst);
+    var recMax = document.getElementById("recMax");
+    recMax.textContent = a.worst;
+    recMax.style.color = a.total === 0 ? ""
+      : (st === "bad" ? "var(--bad)" : st === "warn" ? "var(--warn)" : "var(--good)");
+    var meter = document.getElementById("meter");
+    meter.className = "meter " + st;
+    document.getElementById("meterFill").style.width = Math.min(100, a.worst / LIMIT * 100) + "%";
+
+    var pill = document.getElementById("statusPill");
+    if (a.total === 0) {
+      pill.className = "pill neutral"; pill.textContent = "尚無資料";
+    } else if (st === "bad") {
+      pill.className = "pill bad"; pill.textContent = "超出上限 " + (a.worst - LIMIT) + " 天";
+    } else if (st === "warn") {
+      pill.className = "pill warn"; pill.textContent = "接近上限 · 尚餘 " + (LIMIT - a.worst) + " 天";
+    } else {
+      pill.className = "pill good"; pill.textContent = "符合 · 尚餘 " + (LIMIT - a.worst) + " 天";
+    }
+
+    var ww = document.getElementById("worstWindow");
+    if (a.worstEnd != null && a.worst > 0) {
+      ww.innerHTML = "離境最多的 12 個月期間：<strong>" + fmt(a.worstStart) +
+        "</strong> 至 <strong>" + fmt(a.worstEnd) + "</strong>，合計離境 <strong>" +
+        a.worst + " 天</strong>。";
+    } else {
+      ww.textContent = "加入行程後，這裡會顯示離境日數最多的 12 個月期間。";
+    }
+
+    // eligibility
+    renderEligibility();
+    updateGapHint();
+
+    // method note
+    document.getElementById("methodNote").textContent = state.method === "strict"
+      ? "保守計法：離境當日與返英當日都計為離開英國的日子（trip 總日數 = 返英日 − 離境日 + 1）。此為較嚴謹的估算。"
+      : "標準計法：離境當日與返英當日視為身處英國，只計算完整在境外的日子（trip 天數 = 返英日 − 離境日 − 1）。";
+
+    renderTrips();
+    renderBreach();
+    if (queryActive) runQuery();
+    save();
+  }
+
+  // 連續居留 / 5 年資格起算日：依使用者選的「永居 5 年起算日」
+  function residencyStartStr() {
+    if (state.startBasis === "entry") return state.entryDate || state.grantDate || "";
+    return state.grantDate || state.entryDate || "";
+  }
+
+  // 獲批 → 入境的初始離境：只有「由獲批日起算」時計入
+  // （此時你自獲批日已在居留期內，入境前屬離境）。回傳 [起,迄] 或 null
+  function initialAbsenceRange() {
+    if (state.startBasis === "entry") return null;   // 由入境日起算 → 空檔不計
+    var g = state.grantDate ? dayNum(state.grantDate) : null;
+    var e = state.entryDate ? dayNum(state.entryDate) : null;
+    if (g == null || e == null) return null;
+    if (e <= g) return null;
+    return { s: g, e: e - 1 };      // 獲批日起、入境前一日止
+  }
+
+  function updateGapHint() {
+    var el = document.getElementById("gapHint");
+    if (!el) return;
+    var g = state.grantDate ? dayNum(state.grantDate) : null;
+    var e = state.entryDate ? dayNum(state.entryDate) : null;
+
+    if (state.startBasis === "entry") {
+      el.style.color = "";
+      el.textContent = (g != null && e != null && e > g)
+        ? "由首次入境日起算 5 年；獲批至入境的 " + (e - g) + " 日不計入離境。"
+        : "由首次入境日起算 5 年。";
+      return;
+    }
+
+    // 由獲批日起算
+    if (g == null || e == null) { el.style.color = ""; el.textContent = "由簽證獲批日起算 5 年。"; return; }
+    if (e <= g) { el.style.color = ""; el.textContent = "由獲批日起算 5 年；首次入境不晚於獲批日期，無入境前空檔。"; return; }
+    var gap = e - g;
+    if (gap > 180) {
+      el.style.color = "var(--warn)";
+      el.textContent = "由獲批日起算 5 年；獲批至入境空檔 " + gap + " 日（超過 180）已計入離境，連續居留可能中斷 —— 可考慮改由入境日起算。";
+    } else {
+      el.style.color = "";
+      el.textContent = "由獲批日起算 5 年；獲批至入境空檔 " + gap + " 日已計入離境日數。";
+    }
+  }
+
+  function fmtSlash(n) {
+    var q = dayToParts(n);
+    return q.y + "/" + String(q.m).padStart(2, "0") + "/" + String(q.d).padStart(2, "0");
+  }
+
+  function renderEligibility() {
+    var p = parse(residencyStartStr());
+    var elEl = document.getElementById("stElig");
+    var subEl = document.getElementById("stEligSub");
+    var eligDateEl = document.getElementById("ilrEligDate");
+    var eligNoteEl = document.getElementById("ilrEligNote");
+    var applyDateEl = document.getElementById("ilrApplyDate");
+
+    if (!p) {
+      elEl.textContent = "—"; elEl.style.fontSize = "22px";
+      subEl.textContent = "請先填獲批日期";
+      eligDateEl.textContent = "—";
+      eligNoteEl.textContent = "請先填「BNO 簽證獲批日期」";
+      applyDateEl.textContent = "—";
+      return;
+    }
+
+    var eligN = Math.floor(Date.UTC(p.y + 5, p.m - 1, p.d) / MS); // 住滿 5 年
+    var applyN = eligN - 28;                                      // 最早可提交申請
+    var eligStr = fmtSlash(eligN);
+    var remain = eligN - todayNum();
+
+    var remainTxt;
+    if (remain > 0) {
+      var yrs = Math.floor(remain / 365);
+      var restDays = remain - yrs * 365;
+      remainTxt = "尚餘 " + remain + " 天";
+      if (yrs >= 1) remainTxt += "（約 " + yrs + " 年 " + restDays + " 天）";
+    } else if (remain === 0) {
+      remainTxt = "今天滿 5 年！";
+    } else {
+      remainTxt = "已達 5 年（" + (-remain) + " 天前）";
+    }
+
+    // 摘要卡
+    elEl.style.fontSize = "19px";
+    elEl.textContent = eligStr;
+    subEl.textContent = remainTxt;
+
+    // 永居申請時程卡
+    eligDateEl.textContent = eligStr;
+    eligNoteEl.textContent = remainTxt;
+    applyDateEl.textContent = fmtSlash(applyN);
+  }
+
+  function renderTrips() {
+    var body = document.getElementById("tripBody");
+    var empty = document.getElementById("emptyState");
+    body.innerHTML = "";
+    var sorted = activeTrips().sort(function (x, y) {
+      return (dayNum(x.depart) || 0) - (dayNum(y.depart) || 0);
+    });
+    document.getElementById("tripCount").textContent = sorted.length + " 程";
+    if (sorted.length === 0) { empty.style.display = "block"; return; }
+    empty.style.display = "none";
+
+    var allDays = sortedAbsentDays();
+
+    sorted.forEach(function (t) {
+      var tr = document.createElement("tr");
+      if (t.id === editingId) tr.className = "editing";
+      var days = tripDays(t);
+      // 包含該程的任何 12 個月期間中，離英最多的日數（向前後各看 12 個月取最大）
+      var ar = absenceRange(t);
+      var roll = ar ? tripMaxRolling(allDays, ar.s, ar.e) : 0;
+      var rst = statusOf(roll);
+      var rollColor = rst === "bad" ? "var(--bad)" : rst === "warn" ? "var(--warn)" : "var(--muted)";
+      tr.innerHTML =
+        '<td class="num">' + fmtShort(t.depart) + '</td>' +
+        '<td class="num">' + fmtShort(t.return) + '</td>' +
+        '<td class="trip-note"></td>' +
+        '<td class="rt days-cell num">' + days + ' 天</td>' +
+        '<td class="rt num" style="font-weight:600;color:' + rollColor + '">' + roll + ' / 180</td>' +
+        '<td class="rt"><span class="row-actions">' +
+          '<button class="icon-btn edit" title="編輯" aria-label="編輯">✎</button>' +
+          '<button class="icon-btn del" title="刪除" aria-label="刪除">✕</button>' +
+        '</span></td>';
+      tr.querySelector(".trip-note").textContent = t.note || "—";
+      tr.querySelector(".edit").addEventListener("click", function () { startEdit(t.id); });
+      tr.querySelector(".del").addEventListener("click", function () { removeTrip(t.id); });
+      body.appendChild(tr);
+    });
+  }
+
+  // ---------- analysis: threshold breach list + per-day query ----------
+  function pillHtml(c) {
+    var st = statusOf(c);
+    var txt = st === "bad" ? "超出" : (st === "warn" ? "接近" : "符合");
+    return '<span class="pill ' + st + '">' + txt + '</span>';
+  }
+
+  function renderBreach() {
+    var el = document.getElementById("breachList");
+    var thr = parseInt(document.getElementById("threshold").value, 10);
+    el.innerHTML = "";
+    if (!thr || thr < 1) { el.innerHTML = '<div class="breach-empty">請輸入有效的門檻日數。</div>'; return; }
+    var days = sortedAbsentDays();
+    if (days.length === 0) { el.innerHTML = '<div class="breach-empty">尚未加入行程。</div>'; return; }
+
+    var minD = days[0], maxD = days[days.length - 1];
+    var groups = [], cur = null;
+    sweep(days, minD, maxD + 366, function (E, c) {
+      if (c >= thr) {
+        if (!cur) cur = { start: E, end: E, peak: c };
+        else { cur.end = E; if (c > cur.peak) cur.peak = c; }
+      } else if (cur) { groups.push(cur); cur = null; }
+    });
+    if (cur) groups.push(cur);
+
+    if (groups.length === 0) {
+      el.innerHTML = '<div class="breach-empty">沒有任何一天的過去 12 個月離境達到 ' + thr + ' 天。</div>';
+      return;
+    }
+    groups.forEach(function (g) {
+      var cls = g.peak > LIMIT ? "bad" : "warn";
+      var div = document.createElement("div");
+      div.className = "breach-item " + cls;
+      var range = (g.start === g.end) ? fmt(g.start) : (fmt(g.start) + " 至 " + fmt(g.end));
+      div.innerHTML = '<span class="rng">' + range + '</span>' +
+                      '<span class="pk num">最高 ' + g.peak + ' 天</span>';
+      el.appendChild(div);
+    });
+  }
+
+  function runQuery() {
+    var days = sortedAbsentDays();
+    var from = document.getElementById("qFrom").value;
+    var to = document.getElementById("qTo").value;
+    var out = document.getElementById("queryResult");
+    var err = document.getElementById("queryErr");
+    err.textContent = "";
+    out.innerHTML = "";
+    if (!from) { err.textContent = "請選擇開始日期。"; queryActive = false; return; }
+    var fN = dayNum(from);
+
+    if (!to) { // single day
+      queryActive = true;
+      var c = rollingAt(days, fN);
+      out.innerHTML = '<div class="q-summary">截至 <strong>' + fmt(fN) +
+        '</strong>，過去 12 個月離境 <strong class="num">' + c + '</strong> 天。' + pillHtml(c) + '</div>';
+      return;
+    }
+
+    var tN = dayNum(to);
+    if (tN < fN) { err.textContent = "結束日期不可早於開始日期。"; queryActive = false; return; }
+    queryActive = true;
+
+    var maxC = -1, maxE = null, rows = [], MAXROWS = 1500, n = 0, truncated = false;
+    sweep(days, fN, tN, function (E, c) {
+      if (c > maxC) { maxC = c; maxE = E; }
+      if (n < MAXROWS) rows.push([E, c]); else truncated = true;
+      n++;
+    });
+
+    var html = '<div class="q-summary">此範圍（' + fmt(fN) + ' 至 ' + fmt(tN) +
+      '）內，過去 12 個月離境最多的一天：<strong>' + fmt(maxE) + '</strong>，達 <strong class="num">' +
+      maxC + '</strong> 天。' + pillHtml(maxC) + '</div>';
+    html += '<div class="qtable-wrap"><table class="qtable"><thead><tr>' +
+      '<th>日期</th><th class="rt">過去 12 個月離境</th><th class="rt">狀態</th>' +
+      '</tr></thead><tbody>';
+    for (var i = 0; i < rows.length; i++) {
+      html += '<tr><td class="num">' + fmt(rows[i][0]) + '</td><td class="rt num">' +
+        rows[i][1] + ' 天</td><td class="rt">' + pillHtml(rows[i][1]) + '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+    if (truncated) html += '<div class="breach-empty">範圍過大，僅顯示前 ' + MAXROWS + ' 天（最多的一天已於上方標出）。請縮小範圍以逐日查看。</div>';
+    out.innerHTML = html;
+  }
+
+  // ---------- sync-ready document (de)serialization ----------
+  // Canonical document format (matches bno-sync DESIGN.md §5):
+  //   { schemaVersion, updatedAt, settings:{grantDate,entryDate,method,updatedAt}, trips:[...] }
+  // Tombstones (deleted:true) are retained so future sync can propagate deletions.
+  function toDoc() {
+    var tripUpdates = state.trips.map(function (t) { return t.updatedAt || ""; });
+    var docUpdated = maxIso.apply(null, [state.settingsUpdatedAt].concat(tripUpdates));
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      updatedAt: docUpdated || nowIso(),
+      settings: {
+        grantDate: state.grantDate || "",
+        entryDate: state.entryDate || "",
+        method: state.method,
+        startBasis: state.startBasis || "grant",
+        updatedAt: state.settingsUpdatedAt || ""
+      },
+      trips: state.trips.map(function (t) {
+        return t.deleted
+          ? { id: t.id, deleted: true, updatedAt: t.updatedAt || "" }
+          : { id: t.id, depart: t.depart, return: t.return, note: t.note || "",
+              updatedAt: t.updatedAt || "", deleted: false };
+      })
+    };
+  }
+
+  function normalizeTrip(t) {
+    if (!t || !t.id) return null;
+    var deleted = !!t.deleted;
+    if (!deleted && !(t.depart && t.return)) return null; // active trip needs dates
+    return {
+      id: t.id,
+      depart: t.depart || "",
+      return: t.return || "",
+      note: t.note || "",
+      updatedAt: t.updatedAt || nowIso(), // legacy records get a timestamp on migration
+      deleted: deleted
+    };
+  }
+
+  // Load any known format into flat in-memory state, migrating legacy shapes.
+  function fromDoc(s) {
+    var reset = { grantDate: "", entryDate: "", method: "default", startBasis: "grant", settingsUpdatedAt: "", trips: [] };
+    if (!s || typeof s !== "object") { state = reset; return; }
+    state = reset;
+    if (s.settings && typeof s.settings === "object") {
+      // canonical v1+
+      state.grantDate = s.settings.grantDate || "";
+      state.entryDate = s.settings.entryDate || "";
+      state.method = (s.settings.method === "strict") ? "strict" : "default";
+      state.startBasis = (s.settings.startBasis === "entry") ? "entry" : "grant";
+      state.settingsUpdatedAt = s.settings.updatedAt || "";
+    } else {
+      // legacy flat: {grantDate/entryDate/residencyStart, method, trips}
+      state.entryDate = s.entryDate || s.residencyStart || "";
+      state.grantDate = s.grantDate || "";
+      state.method = (s.method === "strict") ? "strict" : "default";
+      state.settingsUpdatedAt = (state.grantDate || state.entryDate) ? nowIso() : "";
+    }
+    state.trips = Array.isArray(s.trips)
+      ? s.trips.map(normalizeTrip).filter(function (t) { return t; })
+      : [];
+    gcTombstones();
+  }
+
+  // Drop tombstones older than the TTL (safe once no unsynced peer needs them).
+  function gcTombstones() {
+    var cutoff = new Date(Date.now() - TOMBSTONE_TTL_DAYS * MS).toISOString();
+    state.trips = state.trips.filter(function (t) {
+      return !(t.deleted && t.updatedAt && t.updatedAt < cutoff);
+    });
+  }
+
+  // ---------- mutations ----------
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(toDoc())); } catch (e) {}
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      fromDoc(JSON.parse(raw));
+    } catch (e) {}
+  }
+  function uid() { return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  function saveTrip() {
+    var dep = document.getElementById("fDepart").value;
+    var ret = document.getElementById("fReturn").value;
+    var note = document.getElementById("fNote").value.trim();
+    var err = document.getElementById("formErr");
+    err.textContent = "";
+    if (!dep || !ret) { err.textContent = "請填寫離境與返英日期。"; return; }
+    if (dayNum(ret) < dayNum(dep)) { err.textContent = "返英日期不可早於離境日期。"; return; }
+
+    if (editingId) {
+      var t = state.trips.find(function (x) { return x.id === editingId; });
+      if (t) { t.depart = dep; t.return = ret; t.note = note; t.updatedAt = nowIso(); }
+      exitEdit();
+    } else {
+      state.trips.push({ id: uid(), depart: dep, return: ret, note: note, updatedAt: nowIso(), deleted: false });
+    }
+    document.getElementById("fDepart").value = "";
+    document.getElementById("fReturn").value = "";
+    document.getElementById("fNote").value = "";
+    render();
+  }
+
+  function startEdit(id) {
+    var t = state.trips.find(function (x) { return x.id === id; });
+    if (!t) return;
+    editingId = id;
+    document.getElementById("fDepart").value = t.depart;
+    document.getElementById("fReturn").value = t.return;
+    document.getElementById("fNote").value = t.note || "";
+    document.getElementById("formTitle").textContent = "編輯行程";
+    document.getElementById("saveTrip").textContent = "更新行程";
+    document.getElementById("cancelEdit").style.display = "";
+    document.getElementById("formErr").textContent = "";
+    renderTrips();
+    document.getElementById("fDepart").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  function exitEdit() {
+    editingId = null;
+    document.getElementById("formTitle").textContent = "加入離英行程";
+    document.getElementById("saveTrip").textContent = "新增行程";
+    document.getElementById("cancelEdit").style.display = "none";
+  }
+  function removeTrip(id) {
+    // Soft-delete (tombstone) so the deletion propagates on future sync.
+    var t = state.trips.find(function (x) { return x.id === id; });
+    if (t) { t.deleted = true; t.updatedAt = nowIso(); }
+    if (editingId === id) {
+      exitEdit();
+      document.getElementById("fDepart").value = "";
+      document.getElementById("fReturn").value = "";
+      document.getElementById("fNote").value = "";
+    }
+    render();
+  }
+
+  // ---------- data import/export ----------
+  function exportJson() {
+    var blob = new Blob([JSON.stringify(toDoc(), null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "bno-留英日數-備份.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+  function importJson(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        fromDoc(JSON.parse(reader.result));
+        queryActive = false;
+        syncInputs();
+        exitEdit();
+        render();
+      } catch (e) {
+        alert("匯入失敗：檔案格式不正確。");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // ---------- theme ----------
+  function initTheme() {
+    var btn = document.getElementById("themeToggle");
+    btn.addEventListener("click", function () {
+      var root = document.documentElement;
+      var cur = root.getAttribute("data-theme");
+      if (!cur) {
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        cur = prefersDark ? "dark" : "light";
+      }
+      root.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+    });
+  }
+
+  // ---------- wiring ----------
+  function syncInputs() {
+    document.getElementById("grantDate").value = state.grantDate || "";
+    document.getElementById("entryDate").value = state.entryDate || "";
+    var radios = document.getElementsByName("method");
+    for (var i = 0; i < radios.length; i++) radios[i].checked = (radios[i].value === state.method);
+    var basisRadios = document.getElementsByName("startBasis");
+    for (var k = 0; k < basisRadios.length; k++) basisRadios[k].checked = (basisRadios[k].value === state.startBasis);
+  }
+
+  function init() {
+    load();
+    syncInputs();
+    initTheme();
+
+    document.getElementById("saveTrip").addEventListener("click", saveTrip);
+    document.getElementById("cancelEdit").addEventListener("click", function () {
+      exitEdit();
+      document.getElementById("fDepart").value = "";
+      document.getElementById("fReturn").value = "";
+      document.getElementById("fNote").value = "";
+      document.getElementById("formErr").textContent = "";
+      renderTrips();
+    });
+    document.getElementById("fNote").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") saveTrip();
+    });
+
+    document.getElementById("grantDate").addEventListener("change", function (e) {
+      state.grantDate = e.target.value; state.settingsUpdatedAt = nowIso(); render();
+    });
+    document.getElementById("entryDate").addEventListener("change", function (e) {
+      state.entryDate = e.target.value; state.settingsUpdatedAt = nowIso(); render();
+    });
+    var basisRadios = document.getElementsByName("startBasis");
+    for (var b = 0; b < basisRadios.length; b++) {
+      basisRadios[b].addEventListener("change", function (e) {
+        if (e.target.checked) { state.startBasis = e.target.value; state.settingsUpdatedAt = nowIso(); render(); }
+      });
+    }
+    document.getElementById("threshold").addEventListener("input", renderBreach);
+    document.getElementById("runQuery").addEventListener("click", runQuery);
+    var radios = document.getElementsByName("method");
+    for (var i = 0; i < radios.length; i++) {
+      radios[i].addEventListener("change", function (e) {
+        if (e.target.checked) { state.method = e.target.value; state.settingsUpdatedAt = nowIso(); render(); }
+      });
+    }
+
+    document.getElementById("exportBtn").addEventListener("click", exportJson);
+    document.getElementById("importBtn").addEventListener("click", function () {
+      document.getElementById("importFile").click();
+    });
+    document.getElementById("importFile").addEventListener("change", function (e) {
+      if (e.target.files && e.target.files[0]) importJson(e.target.files[0]);
+      e.target.value = "";
+    });
+    document.getElementById("clearBtn").addEventListener("click", function () {
+      if (confirm("確定清除所有行程與設定？此動作無法復原（建議先匯出備份）。")) {
+        state = { grantDate: "", entryDate: "", method: "default", startBasis: "grant", settingsUpdatedAt: "", trips: [] };
+        editingId = null; queryActive = false;
+        syncInputs(); exitEdit();
+        document.getElementById("fDepart").value = "";
+        document.getElementById("fReturn").value = "";
+        document.getElementById("fNote").value = "";
+        document.getElementById("qFrom").value = "";
+        document.getElementById("qTo").value = "";
+        document.getElementById("queryResult").innerHTML = "";
+        document.getElementById("queryErr").textContent = "";
+        render();
+      }
+    });
+
+    render();
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+</body>
+</html>
