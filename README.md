@@ -37,8 +37,6 @@ Works offline · your data stays in your own browser · no account needed
 - **或**下載單一檔 `index.html`，用任何瀏覽器直接開啟（雙擊即可）。
   **Or** download the single `index.html` and just open it in any browser (double-click).
 
-> 想自行部署到 GitHub Pages（免費、附 HTTPS），步驟見 **[INSTALL.md](INSTALL.md)**。
-> To host your own free copy on GitHub Pages, see **[INSTALL.md](INSTALL.md)**.
 
 ### 2. 複製或下載（桌面程式）· Download or copy (desktop app)
 
