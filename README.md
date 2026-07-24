@@ -30,10 +30,10 @@ Works offline · your data stays in your own browser · no account needed
 
 整個工具就是**一個自足的網頁**（單一 HTML，內含全部 CSS/JavaScript），不需安裝、不需後端。/ The whole tool is a **single self-contained web page** (one HTML file with all CSS/JS inline) — nothing to install, no backend.
 
-- **線上版**：開啟已部署的網址（GitHub Pages 等）：
-  `https://woonnngggg.github.io/BNO-VISA-Day-Tracker/`
-  **Online:** open the deployed URL, e.g.
-  `https://woonnngggg.github.io/BNO-VISA-Day-Tracker/`
+- **線上版**：開啟已部署的網址：
+**[https://woonnngggg.github.io/BNO-VISA-Day-Tracker/](https://woonnngggg.github.io/BNO-VISA-Day-Tracker/)**
+  **Online:** open the deployed URL:
+ **[https://woonnngggg.github.io/BNO-VISA-Day-Tracker/](https://woonnngggg.github.io/BNO-VISA-Day-Tracker/)**
 - **或**下載單一檔 `index.html`，用任何瀏覽器直接開啟（雙擊即可）。
   **Or** download the single `index.html` and just open it in any browser (double-click).
 
