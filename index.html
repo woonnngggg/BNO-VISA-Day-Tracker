@@ -249,6 +249,54 @@
   }
   .theme-toggle:hover { color: var(--ink); }
 
+  .help-btn {
+    position: fixed; top: 14px; right: 60px; z-index: 10;
+    height: 38px; padding: 0 15px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted); font-size: 14px; font-weight: 600;
+    box-shadow: var(--shadow); cursor: pointer; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .help-btn:hover { color: var(--ink); border-color: var(--faint); }
+
+  .help-overlay {
+    position: fixed; inset: 0; z-index: 100; display: none;
+    background: rgba(9, 14, 26, .55); padding: 20px;
+    align-items: flex-start; justify-content: center;
+  }
+  .help-overlay.open { display: flex; }
+  .help-panel {
+    background: var(--surface); color: var(--ink); width: 100%; max-width: 840px;
+    max-height: 88vh; margin-top: 3vh; border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden;
+  }
+  .help-head {
+    display: flex; align-items: center; justify-content: space-between; flex: none;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+  }
+  .help-head strong { font-size: 15px; }
+  .help-close {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--muted); font-size: 16px; cursor: pointer;
+    display: grid; place-items: center; font-family: inherit;
+  }
+  .help-close:hover { color: var(--ink); }
+  .help-body { padding: 18px 22px 28px; overflow-y: auto; line-height: 1.6; font-size: 14.5px; }
+  .help-body h1 { font-size: 22px; margin: 4px 0 12px; }
+  .help-body h2 { font-size: 18px; margin: 26px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .help-body h3 { font-size: 15.5px; margin: 18px 0 8px; }
+  .help-body p { margin: 8px 0; }
+  .help-body ul { margin: 8px 0; padding-left: 20px; }
+  .help-body li { margin: 4px 0; }
+  .help-body a { color: var(--accent); }
+  .help-body code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; font-size: 13px; }
+  .help-body pre { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; overflow-x: auto; }
+  .help-body pre code { background: none; border: none; padding: 0; }
+  .help-body blockquote { margin: 10px 0; padding: 8px 14px; border-left: 3px solid var(--heritage); background: var(--surface-2); border-radius: 0 8px 8px 0; color: var(--muted); }
+  .help-body hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .help-body table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13px; display: block; overflow-x: auto; }
+  .help-body th, .help-body td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; vertical-align: top; }
+  .help-body th { background: var(--surface-2); font-weight: 700; white-space: nowrap; }
+
   /* Analysis section */
   .cap2 { font-size: 12px; font-weight: 600; color: var(--faint); margin-bottom: 6px; display: block; }
   .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
@@ -292,6 +340,17 @@
 
 <div class="page">
   <button class="theme-toggle" id="themeToggle" aria-label="切換深淺色主題" title="切換深淺色主題">◐</button>
+  <button class="help-btn" id="helpBtn" title="說明 / Help">說明</button>
+
+  <div class="help-overlay" id="helpOverlay" role="dialog" aria-modal="true" aria-label="說明">
+    <div class="help-panel">
+      <div class="help-head">
+        <strong>說明 · Help</strong>
+        <button class="help-close" id="helpClose" aria-label="關閉 / Close">✕</button>
+      </div>
+      <div class="help-body" id="helpBody">載入中… / Loading…</div>
+    </div>
+  </div>
   <div class="wrap">
 
     <header class="masthead">
